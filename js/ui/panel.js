@@ -782,6 +782,7 @@ const PANEL_ITEM_IMPLEMENTATIONS = {
     'a11y': imports.ui.status.accessibility.ATIndicator,
     'a11yGreeter': imports.ui.status.accessibility.ATGreeterIndicator,
     'keyboard': imports.ui.status.keyboard.InputSourceIndicator,
+    'hotCorner': imports.ui.hotCorner.HotCorner,
 };
 
 const Panel = new Lang.Class({
