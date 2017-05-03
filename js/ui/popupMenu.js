@@ -1230,12 +1230,8 @@ const PopupMenuManager = new Lang.Class({
         };
 
         let source = menu.sourceActor;
-        if (source) {
-            if (!menu.blockSourceEvents)
-                this._grabHelper.addActor(source);
-            menudata.enterId = source.connect('enter-event', Lang.bind(this, function() { return this._onMenuSourceEnter(menu); }));
-            menudata.focusInId = source.connect('key-focus-in', Lang.bind(this, function() { this._onMenuSourceEnter(menu); }));
-        }
+        if (source && !menu.blockSourceEvents)
+            this._grabHelper.addActor(source);
 
         if (position == undefined)
             this._menus.push(menudata);
@@ -1286,22 +1282,6 @@ const PopupMenuManager = new Lang.Class({
         } else {
             this._grabHelper.ungrab({ actor: menu.actor });
         }
-    },
-
-    _changeMenu: function(newMenu) {
-        newMenu.open(this.activeMenu ? BoxPointer.PopupAnimation.FADE
-                                     : BoxPointer.PopupAnimation.FULL);
-    },
-
-    _onMenuSourceEnter: function(menu) {
-        if (!this._grabHelper.grabbed)
-            return Clutter.EVENT_PROPAGATE;
-
-        if (this._grabHelper.isActorGrabbed(menu.actor))
-            return Clutter.EVENT_PROPAGATE;
-
-        this._changeMenu(menu);
-        return Clutter.EVENT_PROPAGATE;
     },
 
     _onMenuDestroy: function(menu) {
