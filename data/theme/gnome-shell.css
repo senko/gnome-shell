@@ -1928,3 +1928,8 @@ StScrollBar {
     -boxpointer-gap: 0px;
     margin-bottom: 0px;
 }
+
+#panel .clock-display {
+    font-size: 14px;
+    font-weight: normal;
+}
