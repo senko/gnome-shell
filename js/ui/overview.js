@@ -682,6 +682,10 @@ const Overview = new Lang.Class({
             this.show();
     },
 
+    getActivePage: function() {
+        return this.viewSelector.getActivePage();
+    },
+
     getShowAppsButton: function() {
         return this._dash.showAppsButton;
     }
