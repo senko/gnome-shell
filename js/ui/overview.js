@@ -682,8 +682,8 @@ const Overview = new Lang.Class({
             this.show();
     },
 
-    getShowAppsButton: function() {
-        return this._dash.showAppsButton;
+    getActivePage: function() {
+        return this.viewSelector.getActivePage();
     }
 });
 Signals.addSignalMethods(Overview.prototype);
