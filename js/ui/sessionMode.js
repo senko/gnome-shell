@@ -112,6 +112,40 @@ const _modes = {
             right: ['a11y', 'keyboard', 'aggregateMenu', 'userMenu',
                     'dateMenu', 'hotCorner']
         }
+    },
+
+    'user-coding': {
+        hasOverview: true,
+        showCalendarEvents: true,
+        allowSettings: true,
+        allowExtensions: true,
+        allowScreencast: true,
+        hasRunDialog: true,
+        hasWorkspaces: true,
+        hasWindows: true,
+        hasWmMenus: true,
+        hasNotifications: true,
+        isLocked: false,
+        isPrimary: true,
+        unlockDialog: imports.ui.unlockDialog.UnlockDialog,
+        components: Config.HAVE_NETWORKMANAGER ?
+                    ['networkAgent', 'polkitAgent',
+                     'keyring', 'autorunManager', 'automountManager',
+                     'codingGameService',
+                     'codingManager',
+                     'discoveryFeed'] :
+                    ['polkitAgent',
+                     'keyring', 'autorunManager', 'automountManager',
+                     'codingGameService',
+                     'codingManager',
+                     'discoveryFeed'],
+        panel: {
+            left: ['endlessButton', 'appIcons'],
+            center: [],
+            right: ['a11y', 'keyboard', 'aggregateMenu', 'userMenu',
+                    'codingGame',
+                    'dateMenu', 'hotCorner']
+        }
     }
 };
 
@@ -166,6 +200,11 @@ const SessionMode = new Lang.Class({
         let isPrimary = (_modes[global.session_mode] &&
                          _modes[global.session_mode].isPrimary);
         let mode = isPrimary ? global.session_mode : 'user';
+
+        if (mode == 'user' &&
+            global.settings.get_boolean('enable-coding-game'))
+            mode = 'user-coding';
+
         this._modeStack = [mode];
         this._sync();
     },
