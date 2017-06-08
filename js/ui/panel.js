@@ -725,6 +725,7 @@ const AggregateMenu = new Lang.Class({
         this._screencast = new imports.ui.status.screencast.Indicator();
         this._location = new imports.ui.status.location.Indicator();
         this._nightLight = new imports.ui.status.nightLight.Indicator();
+        this._orientation = new imports.ui.status.orientation.Indicator();
 
         this._indicators.add_child(this._screencast.indicators);
         this._indicators.add_child(this._location.indicators);
@@ -763,6 +764,7 @@ const AggregateMenu = new Lang.Class({
             this.menu.addMenuItem(this._bluetooth.menu);
         }
         this.menu.addMenuItem(this._location.menu);
+        this.menu.addMenuItem(this._orientation.menu);
         this.menu.addMenuItem(this._rfkill.menu);
         this.menu.addMenuItem(this._power.menu);
         this.menu.addMenuItem(this._nightLight.menu);
@@ -773,6 +775,7 @@ const AggregateMenu = new Lang.Class({
         this.menu.addMenuItem(this._brightness.menu);
 
         menuLayout.addSizeChild(this._location.menu.actor);
+        menuLayout.addSizeChild(this._orientation.menu.actor);
         menuLayout.addSizeChild(this._rfkill.menu.actor);
         menuLayout.addSizeChild(this._power.menu.actor);
     },
