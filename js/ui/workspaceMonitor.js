@@ -21,6 +21,8 @@ const WorkspaceMonitor = new Lang.Class({
 
         let primaryMonitor = Main.layoutManager.primaryMonitor;
         this._inFullscreen = primaryMonitor && primaryMonitor.inFullscreen;
+
+        this._appSystem = Shell.AppSystem.get_default();
     },
 
     _fullscreenChanged: function() {
@@ -40,7 +42,7 @@ const WorkspaceMonitor = new Lang.Class({
     },
 
     _getVisibleApps: function() {
-        let runningApps = Shell.AppSystem.get_default().get_running();
+        let runningApps = this._appSystem.get_running();
         return runningApps.filter(function(app) {
             let windows = app.get_windows();
             for (let window of windows) {
@@ -56,6 +58,15 @@ const WorkspaceMonitor = new Lang.Class({
 
             return false;
         });
+    },
+
+    get hasActiveWindows() {
+        // Count anything fullscreen as an extra window
+        if (this._inFullscreen)
+            return true;
+
+        let apps = this._appSystem.get_running();
+        return apps.length > 0;
     },
 
     get hasVisibleWindows() {
