@@ -1471,14 +1471,19 @@ const WindowManager = new Lang.Class({
         if (this._removeEffect(this._skippedActors, actor))
             return false;
 
+        // We should always animate side component windows in, even
+        // if the overview is visible
+        if (SideComponent.isSideComponentWindow(actor.meta_window))
+            return true;
+
         if (!this._shouldAnimate())
             return false;
 
         if (!actor.get_texture())
             return false;
 
-        if (SideComponent.isSideComponentWindow(actor.meta_window))
-            return true;
+        if (!this._shouldAnimate())
+            return false;
 
         let type = actor.meta_window.get_window_type();
         return types.indexOf(type) >= 0;
