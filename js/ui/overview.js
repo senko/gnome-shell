@@ -500,6 +500,7 @@ const Overview = new Lang.Class({
 
     focusSearch: function() {
         this.show();
+        this.viewSelector.focusSearch();
     },
 
     _onStartupCompleted: function() {
