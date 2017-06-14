@@ -807,6 +807,10 @@ const Overview = new Lang.Class({
             this.hide();
         else
             this.show();
+    },
+
+    getActivePage: function() {
+        return this.viewSelector.getActivePage();
     }
 });
 Signals.addSignalMethods(Overview.prototype);
