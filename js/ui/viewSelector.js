@@ -141,11 +141,8 @@ const ShowOverviewAction = new Lang.Class({
 const ViewSelector = new Lang.Class({
     Name: 'ViewSelector',
 
-    _init : function(searchEntry, showAppsButton) {
+    _init : function(searchEntry) {
         this.actor = new Shell.Stack({ name: 'viewSelector' });
-
-        this._showAppsButton = showAppsButton;
-        this._showAppsButton.connect('notify::checked', Lang.bind(this, this._onShowAppsButtonToggled));
 
         this._activePage = null;
 
@@ -224,13 +221,6 @@ const ViewSelector = new Lang.Class({
                 }
             }));
 
-        Main.wm.addKeybinding('toggle-application-view',
-                              new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
-                              Meta.KeyBindingFlags.NONE,
-                              Shell.ActionMode.NORMAL |
-                              Shell.ActionMode.OVERVIEW,
-                              Lang.bind(this, this._toggleAppsPage));
-
         Main.wm.addKeybinding('toggle-overview',
                               new Gio.Settings({ schema_id: SHELL_KEYBINDINGS_SCHEMA }),
                               Meta.KeyBindingFlags.NONE,
@@ -266,24 +256,16 @@ const ViewSelector = new Lang.Class({
             Main.overview.show();
     },
 
-    _toggleAppsPage: function() {
-        this._showAppsButton.checked = !this._showAppsButton.checked;
-        Main.overview.show();
-    },
-
     showApps: function() {
-        this._showAppsButton.checked = true;
         Main.overview.show();
     },
 
     show: function() {
         this.reset();
-        this._workspacesDisplay.show(this._showAppsButton.checked);
+        this._workspacesDisplay.show(true);
         this._activePage = null;
-        if (this._showAppsButton.checked)
-            this._showPage(this._appsPage);
-        else
-            this._showPage(this._workspacesPage);
+
+        this._showPage(this._appsPage);
 
         if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
             Main.overview.fadeOutDesktop();
@@ -296,7 +278,7 @@ const ViewSelector = new Lang.Class({
 
         this._workspacesDisplay.animateFromOverview(this._activePage != this._workspacesPage);
 
-        this._showAppsButton.checked = false;
+        this._showPage(this._workspacesPage);
 
         if (!this._workspacesDisplay.activeWorkspaceHasMaximizedWindows())
             Main.overview.fadeInDesktop();
@@ -402,13 +384,7 @@ const ViewSelector = new Lang.Class({
     },
 
     _a11yFocusPage: function(page) {
-        this._showAppsButton.checked = page == this._appsPage;
         page.navigate_focus(null, Gtk.DirectionType.TAB_FORWARD, false);
-    },
-
-    _onShowAppsButtonToggled: function() {
-        this._showPage(this._showAppsButton.checked ?
-                       this._appsPage : this._workspacesPage);
     },
 
     _onStageKeyPress: function(actor, event) {
@@ -423,8 +399,6 @@ const ViewSelector = new Lang.Class({
         if (symbol == Clutter.Escape) {
             if (this._searchActive)
                 this.reset();
-            else if (this._showAppsButton.checked)
-                this._showAppsButton.checked = false;
             else
                 Main.overview.hide();
             return Clutter.EVENT_STOP;
@@ -443,8 +417,7 @@ const ViewSelector = new Lang.Class({
     },
 
     _searchCancelled: function() {
-        this._showPage(this._showAppsButton.checked ? this._appsPage
-                                                    : this._workspacesPage);
+        this._showPage(this._appsPage);
 
         // Leave the entry focused when it doesn't have any text;
         // when replacing a selected search term, Clutter emits
