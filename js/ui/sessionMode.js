@@ -98,7 +98,7 @@ const _modes = {
         components: Config.HAVE_NETWORKMANAGER ?
                     ['networkAgent', 'polkitAgent', 'telepathyClient',
                      'keyring', 'autorunManager', 'automountManager',
-                     'appStore', 'discoveryFeed'] :
+                     'appStore', 'discoveryFeed', 'updaterManager'] :
                     ['polkitAgent', 'telepathyClient',
                      'keyring', 'autorunManager', 'automountManager',
                      'appStore', 'discoveryFeed'],
