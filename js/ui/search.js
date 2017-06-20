@@ -214,7 +214,7 @@ const SearchResultsBase = new Lang.Class({
         this.provider.activateResult(id, this._terms);
         if (result.metaInfo.clipboardText)
             this._clipboard.set_text(St.ClipboardType.CLIPBOARD, result.metaInfo.clipboardText);
-        Main.overview.toggle();
+        Main.overview.hide();
     },
 
     _setMoreIconVisible: function(visible) {
