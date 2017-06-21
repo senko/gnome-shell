@@ -80,6 +80,7 @@ const EOS_DESKTOP_MIN_ROWS = 2;
 
 const EOS_LINK_PREFIX = 'eos-link-';
 
+const EOS_ENABLE_APP_CENTER_KEY = 'enable-app-center';
 const EOS_APP_CENTER_ID = 'org.gnome.Software.desktop';
 
 const EOS_INACTIVE_GRID_OPACITY = 96;
@@ -541,6 +542,9 @@ const AllView = new Lang.Class({
         IconGridLayout.layout.connect('changed', Lang.bind(this, function() {
             Main.queueDeferredWork(this._redisplayWorkId);
         }));
+        global.settings.connect('changed::' + EOS_ENABLE_APP_CENTER_KEY, Lang.bind(this, function() {
+            Main.queueDeferredWork(this._redisplayWorkId);
+        }));
 
         this._loadApps();
     },
@@ -600,8 +604,9 @@ const AllView = new Lang.Class({
                 this.addItem(icon);
         }));
 
-        // Add the App Center icon
-        this.addItem(new AppCenterIcon());
+        // Add the App Center icon if it is enabled
+        if (global.settings.get_boolean(EOS_ENABLE_APP_CENTER_KEY))
+            this.addItem(new AppCenterIcon());
 
         this.loadGrid();
     },
