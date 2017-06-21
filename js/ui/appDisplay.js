@@ -80,6 +80,8 @@ const EOS_DESKTOP_MIN_ROWS = 2;
 
 const EOS_LINK_PREFIX = 'eos-link-';
 
+const EOS_APP_CENTER_ID = 'org.gnome.Software.desktop';
+
 const EOS_INACTIVE_GRID_OPACITY = 96;
 const EOS_ACTIVE_GRID_OPACITY = 255;
 
@@ -597,6 +599,9 @@ const AllView = new Lang.Class({
             if (icon)
                 this.addItem(icon);
         }));
+
+        // Add the App Center icon
+        this.addItem(new AppCenterIcon());
 
         this.loadGrid();
     },
@@ -1995,3 +2000,22 @@ const AppIconMenu = new Lang.Class({
     }
 });
 Signals.addSignalMethods(AppIconMenu.prototype);
+
+const AppCenterIcon = new Lang.Class({
+    Name: 'AppCenterIcon',
+    Extends: AppIcon,
+
+    _init : function() {
+        let params = { isDraggable: false,
+                       editable: false,
+                       showMenu: false };
+
+        let appSystem = Shell.AppSystem.get_default();
+        let app = appSystem.lookup_app(EOS_APP_CENTER_ID);
+
+        this.parent(app, params);
+
+        this.icon.label.set_text(_("More Apps"));
+    },
+});
+Signals.addSignalMethods(AppCenterIcon.prototype);
