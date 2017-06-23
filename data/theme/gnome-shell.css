@@ -2027,7 +2027,7 @@ stage {
 
 #panel .clock-display {
     font-size: 14px;
-    font-weight: normal;
+    font-weight: bold;
 }
 
 #panel .panel-button {
