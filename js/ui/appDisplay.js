@@ -530,6 +530,8 @@ const AllView = new Lang.Class({
         this.actor.bind_property('mapped', this._bgAction, 'enabled',
                                  GObject.BindingFlags.SYNC_CREATE);
 
+        this._appCenterIcon = null;
+
         this._displayingPopup = false;
 
         this._currentPopup = null;
@@ -607,6 +609,7 @@ const AllView = new Lang.Class({
 
     removeAll: function() {
         this.folderIcons = [];
+        this._appCenterIcon = null;
         this.parent();
     },
 
@@ -658,17 +661,27 @@ const AllView = new Lang.Class({
                 this.addItem(icon);
         }));
 
-        // Add the App Center icon if it is enabled and installed
-        if (global.settings.get_boolean(EOS_ENABLE_APP_CENTER_KEY)) {
-            let app = appSys.lookup_app(EOS_APP_CENTER_ID);
-            if (app)
-                this.addItem(new AppCenterIcon(app));
-            else
-                log('App center ' + EOS_APP_CENTER_ID + ' is not installed');
-        }
-
+        // Add the App Center icon if it is enabled (and installed)
+        this._maybeAddAppCenterIcon();
 
         this.loadGrid();
+    },
+
+    _maybeAddAppCenterIcon: function() {
+        if (this._appCenterIcon)
+            return;
+
+        if (!global.settings.get_boolean(EOS_ENABLE_APP_CENTER_KEY))
+            return;
+
+        let appSys = Shell.AppSystem.get_default();
+        if (!appSys.lookup_app(EOS_APP_CENTER_ID)) {
+            log('App center ' + EOS_APP_CENTER_ID + ' is not installed');
+            return;
+        }
+
+        this._appCenterIcon = new AppCenterIcon();
+        this.addItem(this._appCenterIcon);
     },
 
     // Overriden from BaseAppView
@@ -2472,14 +2485,23 @@ const AppCenterIcon = new Lang.Class({
     Name: 'AppCenterIcon',
     Extends: AppIcon,
 
-    _init : function(app) {
+    _init : function() {
         let viewIconParams = { isDraggable: false,
                                showMenu: false };
         let iconParams = { editable: false };
 
+        let appSys = Shell.AppSystem.get_default();
+        let app = appSys.lookup_app(EOS_APP_CENTER_ID);
+
         this.parent(app, viewIconParams, iconParams);
 
-        this.icon.label.set_text(_("More Apps"));
+
+    getId: function() {
+        return EOS_APP_CENTER_ID;
+    },
+
+    getName: function() {
+        return _("More Apps");
     },
 });
 Signals.addSignalMethods(AppCenterIcon.prototype);
