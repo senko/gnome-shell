@@ -1597,107 +1597,19 @@ const ViewIconMenu = new Lang.Class({
     redisplay: function() {
         this.removeAll();
 
-        let windows = this._source.app.get_windows().filter(function(w) {
-            return !w.skip_taskbar;
-        });
-
-        // Display the app windows menu items and the separator between windows
-        // of the current desktop and other windows.
-        let activeWorkspace = global.screen.get_active_workspace();
-        let separatorShown = windows.length > 0 && windows[0].get_workspace() != activeWorkspace;
-
-        for (let i = 0; i < windows.length; i++) {
-            let window = windows[i];
-            if (!separatorShown && window.get_workspace() != activeWorkspace) {
-                this._appendSeparator();
-                separatorShown = true;
-            }
-            let item = this._appendMenuItem(window.title);
-            item.connect('activate', Lang.bind(this, function() {
-                this.emit('activate-window', window);
-            }));
+        // First get a contextual submenu from the specific ViewIcon.
+        let ctxtMenuSection = this._source.getContextualMenu();
+        if (ctxtMenuSection && !ctxtMenuSection.isEmpty()) {
+            this.addMenuItem(ctxtMenuSection);
+            this.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         }
 
-        if (this._source.app.is_window_backed())
-            return;
-
-        this._appendSeparator();
-
-        let appInfo = this._source.app.get_app_info();
-        let actions = appInfo.list_actions();
-        if (this._source.app.can_open_new_window() &&
-            actions.indexOf('new-window') == -1) {
-            this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
-            this._newWindowMenuItem.connect('activate', Lang.bind(this, function() {
-                if (this._source.app.state == Shell.AppState.STOPPED)
-                    this._source.animateLaunch();
-
-                this._source.app.open_new_window(-1);
-                this.emit('activate-window', null);
-            }));
-            this._appendSeparator();
-        }
-
-        for (let i = 0; i < actions.length; i++) {
-            let action = actions[i];
-            let item = this._appendMenuItem(appInfo.get_action_name(action));
-            item.connect('activate', Lang.bind(this, function(emitter, event) {
-                this._source.app.launch_action(action, event.get_time(), -1);
-                this.emit('activate-window', null);
-            }));
-        }
-
-        if (global.settings.is_writable('favorite-apps')) {
-            this._appendSeparator();
-
-            let isFavorite = AppFavorites.getAppFavorites().isFavorite(this._source.app.get_id());
-
-            if (isFavorite) {
-                let item = this._appendMenuItem(_("Remove from Favorites"));
-                item.connect('activate', Lang.bind(this, function() {
-                    let favs = AppFavorites.getAppFavorites();
-                    favs.removeFavorite(this._source.app.get_id());
-                }));
-            } else {
-                let item = this._appendMenuItem(_("Add to Favorites"));
-                item.connect('activate', Lang.bind(this, function() {
-                    let favs = AppFavorites.getAppFavorites();
-                    favs.addFavorite(this._source.app.get_id());
-                }));
-            }
-        }
-
-        if (Shell.AppSystem.get_default().lookup_app('org.gnome.Software.desktop')) {
-            this._appendSeparator();
-            let item = this._appendMenuItem(_("Show Details"));
-            item.connect('activate', Lang.bind(this, function() {
-                let id = this._source.app.get_id();
-                let args = GLib.Variant.new('(ss)', [id, '']);
-                Gio.DBus.get(Gio.BusType.SESSION, null,
-                             function(o, res) {
-                                 let bus = Gio.DBus.get_finish(res);
-                                 bus.call('org.gnome.Software',
-                                          '/org/gnome/Software',
-                                          'org.gtk.Actions', 'Activate',
-                                          GLib.Variant.new('(sava{sv})',
-                                                           ['details', [args], null]),
-                                          null, 0, -1, null, null);
-                                 Main.overview.hide();
-                             });
-            }));
-        }
-    },
-
-    _appendSeparator: function () {
-        let separator = new PopupMenu.PopupSeparatorMenuItem();
-        this.addMenuItem(separator);
-    },
-
-    _appendMenuItem: function(labelText) {
-        // FIXME: app-well-menu-item style
-        let item = new PopupMenu.PopupMenuItem(labelText);
+        // Add the "Remove from desktop" menu item at the end.
+        let item = new PopupMenu.PopupMenuItem(_("Remove from desktop"));
         this.addMenuItem(item);
-        return item;
+        item.connect('activate', Lang.bind(this, function() {
+            this._source.remove();
+        }));
     },
 
     popup: function(activatingButton) {
@@ -1802,6 +1714,15 @@ const ViewIcon = new Lang.Class({
         this._removeMenuTimeout();
     },
 
+    activate: function (button) {
+        throw new Error('Not implemented');
+    },
+
+    getContextualMenu: function() {
+        // No contextual menu by default;
+        return null;
+    },
+
     popupMenu: function() {
         this._removeMenuTimeout();
 
@@ -1815,9 +1736,6 @@ const ViewIcon = new Lang.Class({
 
         if (!this._menu) {
             this._menu = new ViewIconMenu(this);
-            this._menu.connect('activate-window', Lang.bind(this, function(menu, window) {
-                this.activateWindow(window);
-            }));
             this._menu.connect('open-state-changed', Lang.bind(this, function(menu, isPoppedUp) {
                 if (!isPoppedUp)
                     this._onMenuPoppedDown();
@@ -1840,22 +1758,9 @@ const ViewIcon = new Lang.Class({
         return false;
     },
 
-    activateWindow: function(metaWindow) {
-        if (metaWindow)
-            Main.activateWindow(metaWindow);
-        else
-            Main.overview.hide();
-    },
-
     _onMenuPoppedDown: function() {
         this.actor.sync_hover();
         this.emit('menu-state-changed', false);
-    },
-
-    activate: function (button) {
-        let event = Clutter.get_current_event();
-        let activationContext = new AppActivation.AppActivationContext(this.app);
-        activationContext.activate(event);
     },
 
     _onLeaveEvent: function(actor, event) {
@@ -2036,12 +1941,6 @@ const FolderIcon = new Lang.Class({
 
         this.view = new FolderView(this, this._dirInfo);
 
-        this.actor.connect('clicked', Lang.bind(this,
-            function() {
-                this._ensurePopup();
-                this.view.actor.vscroll.adjustment.value = 0;
-                this._openSpaceForPopup();
-            }));
         this.actor.connect('notify::mapped', Lang.bind(this,
             function() {
                 if (!this.actor.mapped && this._popup)
@@ -2063,6 +1962,12 @@ const FolderIcon = new Lang.Class({
         return this.view.getAllItems().map(function(item) {
             return item.id;
         });
+    },
+
+    activate: function (button) {
+        this._ensurePopup();
+        this.view.actor.vscroll.adjustment.value = 0;
+        this._openSpaceForPopup();
     },
 
     _onLabelUpdate: function(label, newText) {
@@ -2494,6 +2399,124 @@ const AppIcon = new Lang.Class({
                                         timestamp: 0 });
 
         this.app.open_new_window(params.workspace);
+    },
+
+    activateWindow: function(metaWindow) {
+        if (metaWindow)
+            Main.activateWindow(metaWindow);
+        else
+            Main.overview.hide();
+    },
+
+    activate: function (button) {
+        let event = Clutter.get_current_event();
+        let activationContext = new AppActivation.AppActivationContext(this.app);
+        activationContext.activate(event);
+    },
+
+    getContextualMenu: function() {
+        let menu = new PopupMenu.PopupMenuSection();
+
+        let windows = this.app.get_windows().filter(function(w) {
+            return !w.skip_taskbar;
+        });
+
+        // Display the app windows menu items and the separator between windows
+        // of the current desktop and other windows.
+        let activeWorkspace = global.screen.get_active_workspace();
+        let separatorShown = windows.length > 0 && windows[0].get_workspace() != activeWorkspace;
+
+        for (let i = 0; i < windows.length; i++) {
+            let window = windows[i];
+            if (!separatorShown && window.get_workspace() != activeWorkspace) {
+                this._appendSeparator();
+                separatorShown = true;
+            }
+
+            let item = new PopupMenu.PopupMenuItem(window.title);
+            menu.addMenuItem(item);
+            item.connect('activate', Lang.bind(this, function() {
+                this.activateWindow(window);
+            }));
+        }
+
+        if (this.app.is_window_backed())
+            return menu;
+
+        menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        let appInfo = this.app.get_app_info();
+        let actions = appInfo.list_actions();
+        if (this.app.can_open_new_window() &&
+            actions.indexOf('new-window') == -1) {
+
+            this._newWindowMenuItem = new PopupMenu.PopupMenuItem(_("New Window"));
+            menu.addMenuItem(this._newWindowMenuItem);
+
+            this._newWindowMenuItem.connect('activate', Lang.bind(this, function() {
+                if (this.app.state == Shell.AppState.STOPPED)
+                    this.animateLaunch();
+
+                this.app.open_new_window(-1);
+                this.activateWindow(null);
+            }));
+            menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        }
+
+        for (let i = 0; i < actions.length; i++) {
+            let action = actions[i];
+            let item = new PopupMenu.PopupMenuItem(appInfo.get_action_name(action));
+            menu.addMenuItem(item);
+            item.connect('activate', Lang.bind(this, function(emitter, event) {
+                this.app.launch_action(action, event.get_time(), -1);
+                this.activateWindow(null);
+            }));
+        }
+
+        if (global.settings.is_writable('favorite-apps')) {
+            menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+            let isFavorite = AppFavorites.getAppFavorites().isFavorite(this.app.get_id());
+
+            if (isFavorite) {
+                let item = new PopupMenu.PopupMenuItem(_("Remove from Favorites"));
+                menu.addMenuItem(item);
+                item.connect('activate', Lang.bind(this, function() {
+                    let favs = AppFavorites.getAppFavorites();
+                    favs.removeFavorite(this.app.get_id());
+                }));
+            } else {
+                let item = new PopupMenu.PopupMenuItem(_("Add to Favorites"));
+                menu.addMenuItem(item);
+                item.connect('activate', Lang.bind(this, function() {
+                    let favs = AppFavorites.getAppFavorites();
+                    favs.addFavorite(this.app.get_id());
+                }));
+            }
+        }
+
+        if (Shell.AppSystem.get_default().lookup_app('org.gnome.Software.desktop')) {
+            menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            let item = new PopupMenu.PopupMenuItem(_("Show Details"));
+            menu.addMenuItem(item);
+            item.connect('activate', Lang.bind(this, function() {
+                let id = this.app.get_id();
+                let args = GLib.Variant.new('(ss)', [id, '']);
+                Gio.DBus.get(Gio.BusType.SESSION, null,
+                    function(o, res) {
+                        let bus = Gio.DBus.get_finish(res);
+                        bus.call('org.gnome.Software',
+                                 '/org/gnome/Software',
+                                 'org.gtk.Actions', 'Activate',
+                                 GLib.Variant.new('(sava{sv})',
+                                                  ['details', [args], null]),
+                                 null, 0, -1, null, null);
+                        Main.overview.hide();
+                    });
+            }));
+        }
+
+        return menu;
     },
 
     prepareDndPlaceholder: function() {
