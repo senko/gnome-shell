@@ -1661,6 +1661,9 @@ const ViewIcon = new Lang.Class({
                                       y_fill: true
                                     },
                                     true);
+        iconParams = Params.parse(iconParams,
+                                  { showLabel: true },
+                                  true);
 
         this.showMenu = params.showMenu;
         this.parentView = params.parentView;
