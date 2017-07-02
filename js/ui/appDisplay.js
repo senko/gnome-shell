@@ -1721,6 +1721,10 @@ const ViewIcon = new Lang.Class({
         throw new Error('Not implemented');
     },
 
+    _onLabelUpdate: function() {
+      // Do nothing by default
+    },
+
     _onLabelCancel: function() {
         this.icon.actor.sync_hover();
     },
@@ -2369,18 +2373,6 @@ const AppIcon = new Lang.Class({
 
     getName: function() {
         return this.name;
-    },
-
-    _onLabelUpdate: function(label, newText) {
-        try {
-            this.app.create_custom_launcher_with_name(newText);
-            this.name = newText;
-        } catch(e) {
-            logError(e, 'error while creating a custom launcher for: '
-                      + this.name
-                      + ' using new name: '
-                      + newText);
-        }
     },
 
     _onDestroy: function() {
