@@ -2158,6 +2158,7 @@ const WindowManager = new Lang.Class({
         }
 
         if (SideComponent.isSideComponentWindow(actor.meta_window)) {
+            this._destroying.push(actor);
             this._slideSideComponentOut(shellwm, actor,
                                         this._destroyWindowDone,
                                         this._destroyWindowDone);
