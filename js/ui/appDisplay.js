@@ -630,7 +630,8 @@ const AllView = new Lang.Class({
             let icon = null;
 
             if (gridLayout.iconIsFolder(itemId)) {
-                icon = new FolderIcon(itemId, this);
+                let item = Shell.DesktopDirInfo.new(itemId);
+                icon = new FolderIcon(item, this);
                 icon.connect('name-changed', Lang.bind(this, this._itemNameChanged));
                 this.folderIcons.push(icon);
                 if (this._addedFolderId == itemId) {
@@ -1954,7 +1955,7 @@ const FolderIcon = new Lang.Class({
     Name: 'FolderIcon',
     Extends: ViewIcon,
 
-    _init: function(id, parentView) {
+    _init: function(dirInfo, parentView) {
         let viewIconParams = { isDraggable: true,
                                parentView: parentView };
         let buttonParams = { button_mask: St.ButtonMask.ONE,
@@ -1962,10 +1963,10 @@ const FolderIcon = new Lang.Class({
         let iconParams = { createIcon: Lang.bind(this, this._createIcon),
                            setSizeManually: false,
                            editable: true };
-        this.id = id;
+        this.id = dirInfo.get_id();
         this._parentView = parentView;
 
-        this._dirInfo = Shell.DesktopDirInfo.new(id);
+        this._dirInfo = dirInfo;
         this._name = this._dirInfo.get_name();
 
         this.parent(viewIconParams, buttonParams, iconParams);
