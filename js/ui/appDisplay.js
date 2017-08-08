@@ -88,6 +88,10 @@ const EOS_ACTIVE_GRID_SATURATION = 0;
 
 const EOS_DRAG_OVER_FOLDER_OPACITY = 128;
 
+const EOS_ICON_ANIMATION_TIME = 0.6;
+const EOS_ICON_ANIMATION_DELAY = 0.3;
+const EOS_ICON_ANIMATION_TRANSLATION = 50;
+
 const EOS_NEW_ICON_ANIMATION_TIME = 0.5;
 const EOS_NEW_ICON_ANIMATION_DELAY = 0.7;
 
@@ -779,6 +783,9 @@ const AllView = new Lang.Class({
         if (this.getAllItems().length == 0) {
             if (Main.layoutManager.startingUp) {
                 this.addIcons(true);
+
+                Main.layoutManager.connect('startup-complete',
+                                           Lang.bind(this, this._animateIconsIn));
             } else {
                 this.addIcons();
             }
@@ -792,6 +799,24 @@ const AllView = new Lang.Class({
             animateView.animateMovement();
         }
     },
+
+    _animateIconsIn: function() {
+        log("_animateIconsIn")
+        let allItems = this.getAllItems();
+        for (let i in allItems) {
+            let icon = allItems[i];
+            icon.actor.opacity = 0;
+            icon.actor.translation_y = EOS_ICON_ANIMATION_TRANSLATION;
+            icon.actor.show();
+
+            Tweener.addTween(icon.actor, {
+                translation_y: 0,
+                opacity: 255,
+                time: EOS_ICON_ANIMATION_TIME,
+                delay: EOS_ICON_ANIMATION_DELAY
+            });
+        }
+     },
 
     _itemNameChanged: function(item) {
         // If an item's name changed, we can pluck it out of where it's
