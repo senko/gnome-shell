@@ -150,6 +150,9 @@ const BaseAppView = new Lang.Class({
 
         this._items = {};
         this._allItems = [];
+
+        this._repositionedView = null;
+        this.repositionedIconData = [ null, null ];
     },
 
     _keyFocusIn: function(actor) {
@@ -176,6 +179,16 @@ const BaseAppView = new Lang.Class({
     getLayoutIds: function() {
         let viewId = this.getViewId();
         return IconGridLayout.layout.getIcons(viewId).slice();
+    },
+
+    animateMovement: function() {
+        let [movedList, removedList] = this._findIconChanges();
+        this._grid.animateShuffling(movedList,
+                                    removedList,
+                                    this.repositionedIconData,
+                                    Lang.bind(this, this.addIcons)
+                                   );
+        this.repositionedIconData = [ null, null ];
     },
 
     addIcons: function(isHidden) {
@@ -653,6 +666,14 @@ const AllView = new Lang.Class({
             } else {
                 this.addIcons();
             }
+        } else {
+            let animateView = this._repositionedView;
+            if (!animateView) {
+                animateView = this;
+            }
+            this._repositionedView = null;
+
+            animateView.animateMovement();
         }
     },
 
@@ -1150,6 +1171,9 @@ const AllView = new Lang.Class({
             if (!accepted)
                 return false;
 
+            this._repositionedView = this._dragView;
+            this._repositionedView.repositionedIconData = [ this._originalIdx, position ];
+
             if (this._currentPopup) {
                 this._eventBlocker.reactive = false;
                 this._currentPopup.popdown();
@@ -1169,6 +1193,9 @@ const AllView = new Lang.Class({
         let icon = this._dragView.getIconForIndex(this._insertIdx);
         let insertId = icon ? icon.getId() : null;
         let folderId = this._dragView.getViewId();
+
+        this._repositionedView = this._dragView;
+        this._repositionedView.repositionedIconData = [ this._originalIdx, position ];
 
         // If we dropped the icon outside of the folder, close the popup and
         // add the icon to the main view
