@@ -16,6 +16,7 @@ const Shell = imports.gi.Shell;
 const Signals = imports.signals;
 
 const AltTab = imports.ui.altTab;
+const CodeView = imports.ui.codeView;
 const ForceAppExitDialog = imports.ui.forceAppExitDialog;
 const WorkspaceSwitcherPopup = imports.ui.workspaceSwitcherPopup;
 const Main = imports.ui.main;
@@ -1036,6 +1037,8 @@ const WindowManager = new Lang.Class({
                                         function () { Main.layoutManager.emit('background-clicked'); });
         }));
 
+        this._codeViewManager = new CodeView.CodeViewManager();
+
         this._isWorkspacePrepended = false;
 
         this._switchData = null;
@@ -1045,6 +1048,7 @@ const WindowManager = new Lang.Class({
             this._mapWindowDone(shellwm, actor);
             this._destroyWindowDone(shellwm, actor);
             this._sizeChangeWindowDone(shellwm, actor);
+            this._codeViewManager.killEffectsOnActor(actor);
         }));
 
         this._shellwm.connect('switch-workspace', Lang.bind(this, this._switchWorkspace));
@@ -1991,6 +1995,12 @@ const WindowManager = new Lang.Class({
                     this._checkDimming(parent);
         }));
 
+        if (this._codeViewManager.addBuilderWindow(actor)) {
+            shellwm.completed_map(actor);
+            return;
+        }
+        this._codeViewManager.addAppWindow(actor);
+
         let metaWindow = actor.meta_window;
         let isSplashWindow = Shell.WindowTracker.is_speedwagon_window(metaWindow);
 
@@ -2135,6 +2145,10 @@ const WindowManager = new Lang.Class({
 
     _destroyWindow : function(shellwm, actor) {
         let window = actor.meta_window;
+
+        this._codeViewManager.removeAppWindow(actor);
+        this._codeViewManager.removeBuilderWindow(actor);
+
         if (actor._notifyWindowTypeSignalId) {
             window.disconnect(actor._notifyWindowTypeSignalId);
             actor._notifyWindowTypeSignalId = 0;
