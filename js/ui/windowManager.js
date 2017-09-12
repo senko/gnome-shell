@@ -2167,6 +2167,8 @@ const WindowManager = new Lang.Class({
             }
 
             if (SideComponent.isSideComponentWindow(actor.meta_window) && this._showDesktopOnDestroyDone) {
+                Main.overview.showApps();
+
                 if (SideComponent.shouldHideOtherWindows(actor.meta_window))
                     this._showOtherWindows(actor, false);
             }
