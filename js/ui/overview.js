@@ -252,6 +252,7 @@ const Overview = new Lang.Class({
                                this.dashIconSize = this._dash.iconSize;
                            }));
 
+        Main.layoutManager.connect('startup-complete', Lang.bind(this, this._onStartupCompleted));
         Main.layoutManager.connect('monitors-changed', Lang.bind(this, this._relayout));
         this._relayout();
     },
@@ -436,6 +437,16 @@ const Overview = new Lang.Class({
     focusSearch: function() {
         this.show();
         this._searchEntry.grab_key_focus();
+    },
+
+    _onStartupCompleted: function() {
+        if (this.isDummy)
+            return;
+
+        if (Main.workspaceMonitor.hasActiveWindows)
+            return;
+
+        this._showOrSwitchPage(ViewSelector.ViewPage.APPS);
     },
 
     fadeInDesktop: function() {
