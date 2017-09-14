@@ -404,6 +404,14 @@ const ViewSelector = new Lang.Class({
         let modifiers = event.get_state();
         let symbol = event.get_key_symbol();
 
+        if (this._activePage == this._workspacesPage) {
+            if (symbol == Clutter.Escape) {
+                Main.overview.toggleWindows();
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        }
+
         if (symbol == Clutter.Escape) {
             if (this._searchActive)
                 this.reset();
