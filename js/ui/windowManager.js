@@ -770,6 +770,7 @@ const DesktopOverlay = new Lang.Class({
         this._showing = false;
 
         this._overlayActor = null;
+        this._windowUnmanagedId = 0;
         this._transientActors = [];
 
         let action = new Clutter.ClickAction();
@@ -925,6 +926,11 @@ const DesktopOverlay = new Lang.Class({
             this._allocationId = 0;
         }
 
+        if (this._windowUnmanagedId > 0) {
+            this._overlayActor.meta_window.disconnect(this._windowUnmanagedId);
+            this._windowUnmanagedId = 0;
+        }
+
         if (this._actorDestroyId > 0) {
             this._overlayActor.disconnect(this._actorDestroyId);
             this._actorDestroyId = 0;
@@ -952,6 +958,8 @@ const DesktopOverlay = new Lang.Class({
                                                         Lang.bind(this, this._recalculateOverlay));
         this._actorDestroyId = this._overlayActor.connect('destroy',
                                                           Lang.bind(this, this._untrackActor));
+        this._windowUnmanagedId = this._overlayActor.meta_window.connect('unmanaged',
+                                                                         Lang.bind(this, this._untrackActor));
 
         this._mapId = this._shellwm.connect('map', Lang.bind(this, function(shellwm, actor) {
             let newWindow = actor.meta_window;
