@@ -22,6 +22,7 @@
 #include <gdk/gdkx.h>
 #include <gio/gio.h>
 #include <girepository.h>
+#include <gjs/gjs.h>
 #include <meta/display.h>
 #include <meta/util.h>
 #include <meta/meta-shaped-texture.h>
@@ -69,6 +70,7 @@ struct _ShellGlobal {
   XserverRegion input_region;
 
   GjsContext *js_context;
+  GjsProfiler *js_profiler;
   MetaPlugin *plugin;
   ShellWM *wm;
   GSettings *settings;
@@ -325,6 +327,10 @@ shell_global_init (ShellGlobal *global)
                                      "search-path", search_path,
                                      NULL);
 
+  /* Allow toggling of profiling via SIGUSR2 */
+  global->js_profiler = gjs_profiler_new (global->js_context);
+  gjs_profiler_setup_signals ();
+
   g_strfreev (search_path);
 }
 
@@ -332,6 +338,8 @@ static void
 shell_global_finalize (GObject *object)
 {
   ShellGlobal *global = SHELL_GLOBAL (object);
+
+  g_clear_pointer (&global->js_profiler, gjs_profiler_free);
 
   g_clear_object (&global->js_context);
   g_object_unref (global->settings);
