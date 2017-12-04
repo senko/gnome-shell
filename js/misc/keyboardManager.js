@@ -1,5 +1,6 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 
+const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const GnomeDesktop = imports.gi.GnomeDesktop;
 const Lang = imports.lang;
@@ -11,6 +12,15 @@ const Main = imports.ui.main;
 const DEFAULT_LOCALE = 'en_US';
 const DEFAULT_LAYOUT = 'us';
 const DEFAULT_VARIANT = '';
+
+const KeyboardManagerIface = '<node> \
+<interface name="org.gnome.KeyboardManager"> \
+<method name="IsLatinLayout"> \
+    <arg type="s" direction="in" name="layout_id"/> \
+    <arg type="b" direction="out" name="is_latin" /> \
+</method> \
+</interface> \
+</node>';
 
 let _xkbInfo = null;
 
@@ -53,6 +63,10 @@ const KeyboardManager = new Lang.Class({
         this._current = null;
         this._localeLayoutInfo = this._getLocaleLayout();
         this._layoutInfos = {};
+
+        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(KeyboardManagerIface, this);
+        this._dbusImpl.export(Gio.DBus.session, '/org/gnome/Shell/KeyboardManager');
+        Gio.DBus.session.own_name('org.gnome.Shell.KeyboardManager', Gio.BusNameOwnerFlags.REPLACE, null, null);
     },
 
     _applyLayoutGroup: function(group) {
@@ -151,6 +165,10 @@ const KeyboardManager = new Lang.Class({
     _buildOptionsString: function() {
         let options = this._xkbOptions.join(',');
         return options;
+    },
+
+    IsLatinLayout: function(id) {
+        return this.isLatinLayout(id);
     },
 
     isLatinLayout: function(id) {
